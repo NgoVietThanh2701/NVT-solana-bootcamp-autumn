@@ -11,8 +11,8 @@ dotenv.config();
  * one and storing it within the local directory
  */
 export const payer = process.env?.LOCAL_PAYER_JSON_ABSPATH
-    ? loadKeypairFromFile(process.env?.LOCAL_PAYER_JSON_ABSPATH)
-    : loadOrGenerateKeypair("payer");
+  ? loadKeypairFromFile(process.env?.LOCAL_PAYER_JSON_ABSPATH)
+  : loadOrGenerateKeypair("payer");
 
 // generate a new Keypair for testing, named `wallet`
 export const testWallet = loadOrGenerateKeypair("testWallet");

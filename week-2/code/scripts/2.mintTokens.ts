@@ -9,7 +9,6 @@ import { payer, connection } from "@/lib/vars";
 import { explorerURL, loadPublicKeysFromFile } from "@/lib/helpers";
 
 (async () => {
-
   console.log("Payer address:", payer.publicKey.toBase58());
 
   // load the stored PublicKeys for ease of use
