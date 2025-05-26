@@ -53,7 +53,7 @@ import {
         //
         symbol: "NVT",
         //
-        uri: "ipfs://bafkreih3ss5hkv3lrrs6igbxn7f3qksi45wlevtkiayt7f7tmr5ymwmsyq",
+        uri: "https://raw.githubusercontent.com/NgoVietThanh2701/NVT-solana-bootcamp-autumn/refs/heads/main/week-2/assignment/metadata/token.json",
     };
 
     /**
