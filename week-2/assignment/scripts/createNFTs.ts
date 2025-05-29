@@ -1,92 +1,109 @@
 /**
  * Demonstrates how to mint NFTs and store their metadata on chain using the Metaplex MetadataProgram
+ * CORE ASSETS
  */
 
-import { Keypair, LAMPORTS_PER_SOL } from "@solana/web3.js";
-import { Metaplex, bundlrStorage, keypairIdentity } from "@metaplex-foundation/js";
-
-import { payer, connection } from "@/lib/vars";
-import { explorerURL, printConsoleSeparator } from "@/lib/helpers";
+import { create, mplCore } from "@metaplex-foundation/mpl-core";
+import { createGenericFile, generateSigner, keypairIdentity } from "@metaplex-foundation/umi";
+import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
+import { irysUploader } from "@metaplex-foundation/umi-uploader-irys";
+import { base58 } from "@metaplex-foundation/umi/serializers";
+import fs from "fs";
+import path from "path";
+import dotenv from "dotenv";
+dotenv.config();
 
 (async () => {
-    console.log("Payer address:", payer.publicKey.toBase58());
-    const currentBalance = await connection.getBalance(payer.publicKey);
-    console.log("Current balance of 'payer' (in SOL):", currentBalance / LAMPORTS_PER_SOL);
-
-    // airdrop on low balance
-    if (currentBalance <= LAMPORTS_PER_SOL) {
-        console.log("Low balance, requesting an airdrop...");
-        await connection.requestAirdrop(payer.publicKey, LAMPORTS_PER_SOL);
-    }
-
-    /**
-     * define our ship's JSON metadata
-     */
-    const metadata = {
-        name: "Ngo Viet Thanh",
-        symbol: "NVT_NFT",
-        description: "Ngo Viet Thanh is an intern at Superteam VN 2025",
-        image: "https://github.com/trankhacvy/solana-bootcamp-autumn-2024/blob/main/assets/logo.png?raw=true",
-    };
-
-    /**
-     * Use the Metaplex sdk to handle most NFT actions
-     */
-
-    // create an instance of Metaplex sdk for use
-    const metaplex = Metaplex.make(connection)
-        // set our keypair to use, and pay for the transaction
-        .use(keypairIdentity(payer))
-        // define a storage mechanism to upload with
+    //
+    // ** Setting Up Umi **
+    //
+    const umi = createUmi("https://api.devnet.solana.com")
+        .use(mplCore())
         .use(
-            bundlrStorage({
-                address: "https://devnet.bundlr.network",
-                providerUrl: "https://api.devnet.solana.com",
-                timeout: 60000,
+            irysUploader({
+                address: "https://devnet.irys.xyz",
             }),
         );
+    // You will need to us fs and navigate the filesystem to
+    // load the wallet you wish to use via relative pathing.
+    const walletPath = process.env.LOCAL_PAYER_JSON_ABSPATH ?? "";
+    const walletFile = fs.readFileSync(walletPath, "utf8"); // đọc file dưới dạng text
+    let keypair = umi.eddsa.createKeypairFromSecretKey(new Uint8Array(JSON.parse(walletFile))); // chuyển sang Uint8Array chuẩn
+    umi.use(keypairIdentity(keypair));
 
-    console.log("Uploading metadata...");
+    const imagePath = path.join(__dirname, "..", "/assets/logo.jpg");
+    const imageFile = new Uint8Array(fs.readFileSync(imagePath));
 
-    // upload the JSON metadata
-    const { uri } = await metaplex.nfts().uploadMetadata(metadata);
+    const umiImageFile = createGenericFile(imageFile, "logo.jpeg", {
+        tags: [{ name: "Content-Type", value: "image/jpeg" }],
+    });
 
-    console.log("Metadata uploaded:", uri);
+    console.log("Uploading Image...");
+    const imageUri = await umi.uploader.upload([umiImageFile]).catch(err => {
+        throw new Error(err);
+    });
 
-    printConsoleSeparator("NFT details");
+    console.log("imageUri: " + imageUri[0]);
 
-    console.log("Creating NFT using Metaplex...");
+    //
+    // ** Upload Metadata to Arweave **
+    //
+    const metadata = {
+        name: "NFT NVT",
+        symbol: "NVT",
+        description: "This is an NFT on Solana of NGO VIET THANH",
+        image: imageUri[0],
+        attributes: [
+            {
+                trait_type: "boy",
+                value: "8",
+            },
+            {
+                trait_type: "girl",
+                value: "30",
+            },
+        ],
+        properties: {
+            files: [
+                {
+                    uri: imageUri[0],
+                    type: "image/jpeg",
+                },
+            ],
+            category: "image",
+            share: 100,
+        },
+        seller_fee_basis_points: 1000,
+    };
 
-    const tokenMint = Keypair.generate();
+    // // Call upon umi's `uploadJson` function to upload our metadata to Arweave via Irys.
 
-    // create a new nft using the metaplex sdk
-    const { nft, response } = await metaplex.nfts().create({
-        uri,
+    console.log("Uploading Metadata...");
+    const metadataUri = await umi.uploader.uploadJson(metadata).catch(err => {
+        throw new Error(err);
+    });
+
+    //
+    // ** Creating the NFT **
+    //
+
+    // We generate a signer for the NFT
+    const asset = generateSigner(umi);
+    console.log("Creating NFT...");
+    const tx = await create(umi, {
+        asset,
         name: metadata.name,
-        symbol: metadata.symbol,
-        useNewMint: tokenMint,
+        uri: metadataUri,
+    }).sendAndConfirm(umi);
 
-        // `sellerFeeBasisPoints` is the royalty that you can define on nft
-        sellerFeeBasisPoints: 500, // Represents 5.00%.
+    // // Finally we can deserialize the signature that we can check on chain.
+    const signature = base58.deserialize(tx.signature)[0];
 
-        //
-        isMutable: true,
-    });
-
-    console.log(nft);
-
-    printConsoleSeparator("NFT created:");
-    console.log(explorerURL({ txSignature: response.signature }));
-
-    /**
-     *
-     */
-
-    printConsoleSeparator("Find by mint:");
-
-    // you can also use the metaplex sdk to retrieve info about the NFT's mint
-    const mintInfo = await metaplex.nfts().findByMint({
-        mintAddress: tokenMint.publicKey,
-    });
-    console.log(mintInfo);
+    // Log out the signature and the links to the transaction and the NFT.
+    console.log("\nNFT Created");
+    console.log("View Transaction on Solana Explorer");
+    console.log(`https://explorer.solana.com/tx/${signature}?cluster=devnet`);
+    console.log("\n");
+    console.log("View NFT on Metaplex Explorer");
+    console.log(`https://core.metaplex.com/explorer/${asset.publicKey}?env=devnet`);
 })();
