@@ -11,12 +11,10 @@ import { base58 } from "@metaplex-foundation/umi/serializers";
 import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
+import { readFile } from "fs/promises";
 dotenv.config();
 
 (async () => {
-    //
-    // ** Setting Up Umi **
-    //
     const umi = createUmi("https://api.devnet.solana.com")
         .use(mplCore())
         .use(
@@ -24,18 +22,20 @@ dotenv.config();
                 address: "https://devnet.irys.xyz",
             }),
         );
-    // You will need to us fs and navigate the filesystem to
-    // load the wallet you wish to use via relative pathing.
+
     const walletPath = process.env.LOCAL_PAYER_JSON_ABSPATH ?? "";
-    const walletFile = fs.readFileSync(walletPath, "utf8"); // đọc file dưới dạng text
-    let keypair = umi.eddsa.createKeypairFromSecretKey(new Uint8Array(JSON.parse(walletFile))); // chuyển sang Uint8Array chuẩn
+    const walletFile = fs.readFileSync(walletPath, "utf8");
+    let keypair = umi.eddsa.createKeypairFromSecretKey(new Uint8Array(JSON.parse(walletFile)));
+
+    // Load the keypair into umi.
     umi.use(keypairIdentity(keypair));
 
+    // load image
     const imagePath = path.join(__dirname, "..", "/assets/logo.jpg");
-    const imageFile = new Uint8Array(fs.readFileSync(imagePath));
+    const imageBuffer = await readFile(imagePath);
 
-    const umiImageFile = createGenericFile(imageFile, "logo.jpeg", {
-        tags: [{ name: "Content-Type", value: "image/jpeg" }],
+    const umiImageFile = createGenericFile(new Uint8Array(imageBuffer), "logo.jpeg", {
+        contentType: "image/jpeg",
     });
 
     console.log("Uploading Image...");
@@ -45,12 +45,13 @@ dotenv.config();
 
     console.log("imageUri: " + imageUri[0]);
 
-    //
-    // ** Upload Metadata to Arweave **
-    //
+    /*
+     * Upload Metadata to Arweave **
+     */
+
     const metadata = {
         name: "NFT NVT",
-        symbol: "NVT",
+        symbol: "NVTA",
         description: "This is an NFT on Solana of NGO VIET THANH",
         image: imageUri[0],
         attributes: [
@@ -73,21 +74,28 @@ dotenv.config();
             category: "image",
             share: 100,
         },
-        seller_fee_basis_points: 1000,
+        creators: [
+            {
+                address: keypair.publicKey,
+                share: 100,
+            },
+        ],
+        sellerFeeBasisPoints: 1000,
     };
 
-    // // Call upon umi's `uploadJson` function to upload our metadata to Arweave via Irys.
+    // Call upon umi's `uploadJson` function to upload our metadata to Arweave via Irys.
 
     console.log("Uploading Metadata...");
     const metadataUri = await umi.uploader.uploadJson(metadata).catch(err => {
         throw new Error(err);
     });
+    console.log("Metadata: ", metadataUri);
 
-    //
-    // ** Creating the NFT **
-    //
+    /*
+     * Creating the NFT
+     */
 
-    // We generate a signer for the NFT
+    // // We generate a signer for the NFT
     const asset = generateSigner(umi);
     console.log("Creating NFT...");
     const tx = await create(umi, {
@@ -95,6 +103,8 @@ dotenv.config();
         name: metadata.name,
         uri: metadataUri,
     }).sendAndConfirm(umi);
+
+    console.log("NFT address: ", asset.publicKey);
 
     // // Finally we can deserialize the signature that we can check on chain.
     const signature = base58.deserialize(tx.signature)[0];
