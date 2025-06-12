@@ -51,7 +51,7 @@ dotenv.config();
 
     const metadata = {
         name: "NFT NVT",
-        symbol: "NVTA",
+        symbol: "NVT",
         description: "This is an NFT on Solana of NGO VIET THANH",
         image: imageUri[0],
         attributes: [

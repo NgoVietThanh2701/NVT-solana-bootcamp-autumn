@@ -182,8 +182,8 @@ import {
             initializeMintInstruction,
             createMetadataInstruction,
             createATAForYourself,
-            createATAForStaticAccount,
             mintInstructionYourSelf,
+            createATAForStaticAccount,
             mintInstructionStaticAccount,
         ],
     });
