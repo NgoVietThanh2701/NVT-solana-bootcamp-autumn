@@ -129,9 +129,6 @@ describe("token-staking", () => {
       });
 
       it("Unstake successfully", async () => {
-         setTimeout(() => {
-            console.log("delay for staking");
-         }, 500);
          const balanceStakerBefore = await provider.connection.getBalance(staker.publicKey);
          console.log("Balance of staker: ", balanceStakerBefore / anchor.web3.LAMPORTS_PER_SOL);
 
@@ -181,7 +178,7 @@ describe("token-staking", () => {
             balanceStakerAfter / anchor.web3.LAMPORTS_PER_SOL,
          );
 
-         expect(balanceStakerAfter).to.be.greaterThan(balanceStakerAfter);
+         expect(balanceStakerAfter).to.be.greaterThan(balanceStakerBefore);
 
          try {
             await program.account.stakeInfo.fetch(stakeInfoUSDC);
