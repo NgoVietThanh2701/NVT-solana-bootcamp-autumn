@@ -17,7 +17,10 @@ pub struct Unstake<'info> {
 
     #[account(
         mut,
-        seeds = [STAKE_INFO_SEED, staker.key().as_ref()],
+        close = staker,
+        has_one = staker, // check stake_info.staker = staker
+        has_one = mint,   // check stake_info.mint = mint
+        seeds = [STAKE_INFO_SEED, staker.key().as_ref(), mint.key().as_ref()],
         bump,
     )]
     pub stake_info: Account<'info, StakeInfo>,
@@ -31,7 +34,7 @@ pub struct Unstake<'info> {
 
     #[account(
         mut,
-        seeds = [REWARD_VAULT_SEED],
+        seeds = [REWARD_VAULT_SEED, mint.key().as_ref()],
         bump,
         token::mint = mint,
         token::authority = reward_vault,
@@ -63,15 +66,17 @@ pub fn unstake(ctx: Context<Unstake>) -> Result<()> {
 
     let stake_amount = stake_info.amount;
 
-    let reward = slot_passed
-        .checked_mul(10u64.pow(ctx.accounts.mint.decimals as u32))
-        .unwrap();
+    let reward = stake_amount
+        .checked_mul(slot_passed).unwrap()
+        .checked_div(100).unwrap();
 
+    msg!("slot passed: {}", slot_passed);
     msg!("reward: {}", reward);
 
     // transfer reward to staker
     let reward_vault_bump = ctx.bumps.reward_vault;
-    let reward_vault_signer_seeds: &[&[&[u8]]] = &[&[REWARD_VAULT_SEED, &[reward_vault_bump]]];
+    let mint_key = ctx.accounts.mint.key();
+    let reward_vault_signer_seeds: &[&[&[u8]]] = &[&[REWARD_VAULT_SEED, mint_key.as_ref() , &[reward_vault_bump]]];
     transfer(
         CpiContext::new_with_signer(
             ctx.accounts.token_program.to_account_info(),
@@ -85,11 +90,11 @@ pub fn unstake(ctx: Context<Unstake>) -> Result<()> {
         reward,
     )?;
 
-    // transfer token to vault
+    // transfer token from vault to token staker account
     let stake_info_bump = ctx.bumps.stake_info;
     let staker_key = ctx.accounts.staker.key();
     let stake_info_signer_seeds: &[&[&[u8]]] =
-        &[&[STAKE_INFO_SEED, staker_key.as_ref(), &[stake_info_bump]]];
+        &[&[STAKE_INFO_SEED, staker_key.as_ref(), mint_key.as_ref(), &[stake_info_bump]]];
 
     transfer(
         CpiContext::new_with_signer(
@@ -105,11 +110,11 @@ pub fn unstake(ctx: Context<Unstake>) -> Result<()> {
     )?;
 
     // update stake_info
-    let stake_info = &mut ctx.accounts.stake_info;
+    // let stake_info = &mut ctx.accounts.stake_info;
 
-    stake_info.stake_at = clock.slot;
-    stake_info.is_staked = false;
-    stake_info.amount = 0;
+    // stake_info.stake_at = clock.slot;
+    // stake_info.is_staked = false;
+    // stake_info.amount = 0;
 
     Ok(())
 }
