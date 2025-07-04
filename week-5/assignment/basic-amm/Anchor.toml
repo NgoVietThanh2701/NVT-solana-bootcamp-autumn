@@ -6,14 +6,14 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-token_staking = "3beDD9MYEwAY8VG1cGfmRXCXsvqfzpiHN2P4EC2PMogP"
+basic_amm = "ESNJXgBns5jinLMTLhTUBg17BnTFgAHr1fpKeeSDfdkN"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
 cluster = "localnet"
-wallet = "/mnt/c/Users/ngovi/.config/solana/.local_keys/payer.json"
+wallet = "/home/ngovietthanh/payer.json"
 
 [scripts]
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
