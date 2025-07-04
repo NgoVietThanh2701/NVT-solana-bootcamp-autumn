@@ -16,7 +16,7 @@ describe("basic-amm", () => {
    const provider = anchor.AnchorProvider.env();
    anchor.setProvider(provider);
 
-   const program = anchor.workspace.AnchorBasicAmm as Program<BasicAmm>;
+   const program = anchor.workspace.BasicAmm as Program<BasicAmm>;
    const [maker, user1, user2] = [
       web3.Keypair.generate(),
       web3.Keypair.generate(),
