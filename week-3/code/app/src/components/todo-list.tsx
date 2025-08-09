@@ -2,16 +2,16 @@
 
 import useAnchorProvider from "@/hooks/use-anchor-provider";
 import TodoProgram from "@/lib/todo-program";
-import { Center, Flex, List, Spinner, Text } from "@chakra-ui/react";
 import { IdlAccounts } from "@coral-xyz/anchor";
 import { useQuery } from "@tanstack/react-query";
-import { IDL } from "../../../target/types/todo_app";
+import { Loader2 } from "lucide-react";
+import { TodoApp } from "../../../target/types/todo_app";
 import TodoItem from "./todo-item";
 
 export default function TodoList({
   profile,
 }: {
-  profile: IdlAccounts<typeof IDL>["profile"];
+  profile: IdlAccounts<TodoApp>["profile"];
 }) {
   const provider = useAnchorProvider();
 
@@ -23,20 +23,20 @@ export default function TodoList({
 
   if (isLoading) {
     return (
-      <Center as={Flex} direction="column" gap={4} py={8}>
-        <Spinner size="xl" colorScheme="blue" />
-        <Text>Loading...</Text>
-      </Center>
+      <div className="flex flex-col items-center gap-4 py-8">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+        <p className="text-sm text-muted-foreground">Loading...</p>
+      </div>
     );
   }
 
   console.log("todos", todos?.length);
 
   return (
-    <List>
+    <ul className="space-y-2">
       {todos?.map((todo, idx) => (
         <TodoItem key={idx} content={todo.content} completed={todo.completed} />
       ))}
-    </List>
+    </ul>
   );
 }

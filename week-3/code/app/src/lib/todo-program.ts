@@ -1,7 +1,7 @@
 import { AnchorProvider, IdlAccounts, Program, utils } from "@coral-xyz/anchor";
-import { TodoApp, IDL } from "../../../target/types/todo_app";
+import TodoAppIdl from "../../../target/idl/todo_app.json";
+import { TodoApp } from "../../../target/types/todo_app";
 import { Cluster, PublicKey, SystemProgram } from "@solana/web3.js";
-import { getProgramId } from "./helper";
 
 export default class TodoProgram {
   program: Program<TodoApp>;
@@ -9,7 +9,7 @@ export default class TodoProgram {
 
   constructor(provider: AnchorProvider, cluster: Cluster = "devnet") {
     this.provider = provider;
-    this.program = new Program(IDL, getProgramId(cluster), provider);
+    this.program = new Program(TodoAppIdl,  provider);
   }
 
   createProfile(name: string) {
@@ -18,7 +18,7 @@ export default class TodoProgram {
       this.program.programId
     );
 
-    const builder = this.program.methods.createProfile(name).accounts({
+    const builder = this.program.methods.createProfile(name).accountsPartial({
       creator: this.provider.publicKey,
       profile,
       systemProgram: SystemProgram.programId,
@@ -47,7 +47,7 @@ export default class TodoProgram {
       this.program.programId
     );
 
-    const builder = this.program.methods.createTodo(content).accounts({
+    const builder = this.program.methods.createTodo(content).accountsPartial({
       creator: this.provider.publicKey,
       profile,
       todo,
@@ -57,7 +57,7 @@ export default class TodoProgram {
     return builder.transaction();
   }
 
-  async fetchTodos(profile: IdlAccounts<typeof IDL>["profile"]) {
+  async fetchTodos(profile: IdlAccounts<TodoApp>["profile"]) {
     const todoCount = profile.todoCount;
 
     const todoPdas: PublicKey[] = [];

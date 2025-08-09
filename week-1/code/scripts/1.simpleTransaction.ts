@@ -66,12 +66,15 @@ import { explorerURL, printConsoleSeparator } from "@/lib/helpers";
    */
 
   // get the latest recent blockhash
-  const recentBlockhash = await connection.getLatestBlockhash().then(res => res.blockhash);
+  const {
+    context: { slot: minContextSlot },
+    value: { blockhash, lastValidBlockHeight },
+  } = await connection.getLatestBlockhashAndContext();
 
   // create a message (v0)
   const message = new TransactionMessage({
     payerKey: payer.publicKey,
-    recentBlockhash,
+    recentBlockhash: blockhash,
     instructions: [createAccountIx],
   }).compileToV0Message();
 
@@ -81,10 +84,12 @@ import { explorerURL, printConsoleSeparator } from "@/lib/helpers";
   // sign the transaction with our needed Signers (e.g. `payer` and `keypair`)
   tx.sign([payer, keypair]);
 
-  console.log("tx after signing:", tx);
-
   // actually send the transaction
-  const signature = await connection.sendTransaction(tx);
+  const signature = await connection.sendTransaction(tx, {
+    minContextSlot,
+  });
+
+  await connection.confirmTransaction({ blockhash, lastValidBlockHeight, signature });
 
   /**
    * display some helper text

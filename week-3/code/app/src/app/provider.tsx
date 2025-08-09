@@ -1,6 +1,5 @@
 "use client";
 
-import { ChakraProvider } from "@chakra-ui/react";
 import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
 import {
   ConnectionProvider,
@@ -11,7 +10,6 @@ import {
   PhantomWalletAdapter,
   SolflareWalletAdapter,
 } from "@solana/wallet-adapter-wallets";
-import { clusterApiUrl } from "@solana/web3.js";
 import { useMemo } from "react";
 import { ReactQueryProvider } from "./react-query-provider";
 
@@ -33,16 +31,13 @@ export default function Provider({
 
   return (
     <ReactQueryProvider>
-      <ChakraProvider>
-        <ConnectionProvider
-          // endpoint={"http://localhost:8899"}
-          endpoint={endpoint}
-        >
-          <WalletProvider wallets={wallets} autoConnect>
-            <WalletModalProvider>{children}</WalletModalProvider>
-          </WalletProvider>
-        </ConnectionProvider>
-      </ChakraProvider>
+      <ConnectionProvider
+        endpoint={endpoint}
+      >
+        <WalletProvider wallets={wallets} autoConnect>
+          <WalletModalProvider>{children}</WalletModalProvider>
+        </WalletProvider>
+      </ConnectionProvider>
     </ReactQueryProvider>
   );
 }

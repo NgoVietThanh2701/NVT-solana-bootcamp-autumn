@@ -28,7 +28,7 @@ variable to be the **_absolute path_** of your local testing wallet keypair JSON
 
 After setting up locally, I recommend exploring the code of the following files (in order):
 
-- [`1.createTokenWithMetadata.ts`](./scripts/`1.createTokenWithMetadata.ts)
+- [`1.createToken.ts`](./scripts/`1.createToken.ts)
 - [`2.mintTokens.ts`](./scripts/2.mintTokens.ts)
 - [`3.updateMetadata.ts`](./scripts/3.updateMetadata.ts)
 - [`4.createNFTs.ts`](./scripts/4.createNFTs.ts)
@@ -48,20 +48,15 @@ Once setup locally, you will be able to run the scripts included within this rep
 yarn execute ./scripts/<script>
 ```
 
-#### `1.createTokenWithMetadata.ts`
+#### `1.createToken.ts`
 
-Demonstrates how to create a SPL token and store it's metadata on chain (using the Metaplex MetaData
-program)
+Demonstrates how to create a SPL token
 
 #### `2.mintTokens.ts`
 
 Demonstrates how to create new SPL tokens (aka "minting tokens") into an existing SPL Token Mint
 
-#### `3.updateMetadata.ts`
-
-Demonstrates how to update the metadata for an SPL token, using the Metaplex MetadataProgram
-
-#### `4.createNFTs.ts`
+#### `3.createNFTs.ts`
 
 Demonstrates how to mint NFTs and store their metadata on chain using the Metaplex MetadataProgram
 

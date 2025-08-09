@@ -11,6 +11,11 @@
 -   Please include the signatures of your executed transactions run on devnet in your submission.
 
 ## Submission
+<<<<<<< HEAD
+=======
+- Begin your work using the code found in the `/week-1/code` folder.
+- Ensure all the assignment code resides in the `/week-1/assignment` directory. The final submission deadline is `29/07/2025`.
+>>>>>>> newUpstream/main
 
 -   Begin your work using the code found in the `/week-1/code` folder.
 -   Ensure all the assignment code resides in the `/week-1/assignment` directory. The final

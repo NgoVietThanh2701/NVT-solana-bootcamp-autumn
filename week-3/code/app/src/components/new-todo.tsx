@@ -2,34 +2,30 @@
 
 import useAnchorProvider from "@/hooks/use-anchor-provider";
 import TodoProgram from "@/lib/todo-program";
+import { Button } from "@/components/ui/button";
 import {
-  Button,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalFooter,
-  ModalBody,
-  ModalCloseButton,
-  useDisclosure,
-  FormControl,
-  FormLabel,
-  Textarea,
-  useToast,
-} from "@chakra-ui/react";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
 import { IdlAccounts } from "@coral-xyz/anchor";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { IDL } from "../../../target/types/todo_app";
+import { TodoApp } from "../../../target/types/todo_app";
 
 export default function NewTodo({
   profile,
 }: {
-  profile: IdlAccounts<typeof IDL>["profile"];
+  profile: IdlAccounts<TodoApp>["profile"];
 }) {
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [isOpen, setIsOpen] = useState(false);
 
-  const toast = useToast();
+  const { toast } = useToast();
 
   const queryClient = useQueryClient();
 
@@ -56,7 +52,7 @@ export default function NewTodo({
 
       toast({
         title: "Transaction sent",
-        status: "success",
+        variant: "default",
       });
 
       return queryClient.invalidateQueries({
@@ -67,7 +63,7 @@ export default function NewTodo({
       console.error(error);
     },
     onSettled: () => {
-      onClose();
+      setIsOpen(false);
     },
   });
 
@@ -78,40 +74,45 @@ export default function NewTodo({
 
   return (
     <>
-      <Button onClick={onOpen} colorScheme="blue">
+      <Button onClick={() => setIsOpen(true)}>
         Add todo
       </Button>
-      <Modal isOpen={isOpen} onClose={onClose}>
-        <ModalOverlay />
-        <ModalContent as="form" onSubmit={handleSubmit}>
-          <ModalHeader>New todo</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody pb={6}>
-            <FormControl>
-              <FormLabel>Content</FormLabel>
-              <Textarea
-                value={content}
-                onChange={(event) => setContent(event.target.value)}
-                placeholder="Describe what this todo is about"
-                rows={8}
-              />
-            </FormControl>
-          </ModalBody>
-
-          <ModalFooter>
-            <Button onClick={onClose}>Cancel</Button>
-            <Button
-              type="submit"
-              colorScheme="blue"
-              ml={3}
-              isLoading={isPending}
-              loadingText="Creating"
-            >
-              Create
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent>
+          <form onSubmit={handleSubmit}>
+            <DialogHeader>
+              <DialogTitle>New todo</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <div className="space-y-2">
+                <Label htmlFor="content">Content</Label>
+                <Textarea
+                  id="content"
+                  value={content}
+                  onChange={(event) => setContent(event.target.value)}
+                  placeholder="Describe what this todo is about"
+                  rows={8}
+                />
+              </div>
+            </div>
+            <DialogFooter className="gap-2">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setIsOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={isPending}
+              >
+                {isPending ? "Creating..." : "Create"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

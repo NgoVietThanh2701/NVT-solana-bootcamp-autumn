@@ -1,6 +1,6 @@
 "use client";
 
-import { Checkbox, ListItem } from "@chakra-ui/react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function TodoItem({
   content,
@@ -10,15 +10,19 @@ export default function TodoItem({
   completed?: boolean;
 }) {
   return (
-    <ListItem borderBottomColor="gray.500" borderBottomWidth="1px" py={4}>
-      <Checkbox
-        defaultChecked={completed}
-        sx={{
-          textDecoration: completed ? "line-through" : "initial",
-        }}
-      >
-        {content}
-      </Checkbox>
-    </ListItem>
+    <li className="border-b border-gray-200 py-4">
+      <div className="flex items-center space-x-2">
+        <Checkbox
+          defaultChecked={completed}
+          id={`todo-${content}`}
+        />
+        <label 
+          htmlFor={`todo-${content}`}
+          className={`text-sm cursor-pointer ${completed ? "line-through text-muted-foreground" : ""}`}
+        >
+          {content}
+        </label>
+      </div>
+    </li>
   );
 }

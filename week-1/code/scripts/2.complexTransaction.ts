@@ -3,12 +3,13 @@
  * that includes multiple instructions to the Solana blockchain
  */
 
-import { SystemProgram, TransactionMessage, VersionedTransaction } from "@solana/web3.js";
+import { SystemProgram, TransactionMessage, VersionedTransaction, Keypair } from "@solana/web3.js";
 
-import { payer, testWallet, connection, STATIC_PUBLICKEY } from "@/lib/vars";
+import { payer, connection, STATIC_PUBLICKEY } from "@/lib/vars";
 import { explorerURL, printConsoleSeparator } from "@/lib/helpers";
 
 (async () => {
+  const testWallet = Keypair.generate();
   console.log("Payer address:", payer.publicKey.toBase58());
   console.log("Test wallet address:", testWallet.publicKey.toBase58());
 
@@ -60,14 +61,17 @@ import { explorerURL, printConsoleSeparator } from "@/lib/helpers";
    */
 
   // get the latest recent blockhash
-  const recentBlockhash = await connection.getLatestBlockhash().then(res => res.blockhash);
+  const {
+    context: { slot: minContextSlot },
+    value: { blockhash, lastValidBlockHeight },
+  } = await connection.getLatestBlockhashAndContext();
 
   // create a transaction message
   const message = new TransactionMessage({
     payerKey: payer.publicKey,
-    recentBlockhash,
+    recentBlockhash: blockhash,
     instructions: [
-      // create the test wallet's account on chain
+       // create the test wallet's account on chain
       createTestAccountIx,
       // transfer lamports to the static wallet
       transferToStaticWalletIx,
@@ -92,7 +96,9 @@ import { explorerURL, printConsoleSeparator } from "@/lib/helpers";
   tx.sign([payer, testWallet]);
 
   // actually send the transaction
-  const sig = await connection.sendTransaction(tx);
+  const sig = await connection.sendTransaction(tx, { minContextSlot });
+
+  await connection.confirmTransaction({ blockhash, lastValidBlockHeight, signature: sig });
 
   /**
    * display some helper text

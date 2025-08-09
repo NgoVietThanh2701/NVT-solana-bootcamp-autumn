@@ -5,9 +5,9 @@ import NewProfile from "@/components/new-profile";
 import NewTodo from "@/components/new-todo";
 import useAnchorProvider from "@/hooks/use-anchor-provider";
 import TodoProgram from "@/lib/todo-program";
-import { Center, Flex, Spinner, Text } from "@chakra-ui/react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useQuery } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
 import TodoList from "./todo-list";
 
 export default function UserTodos() {
@@ -22,10 +22,10 @@ export default function UserTodos() {
 
   if (isLoading) {
     return (
-      <Center as={Flex} direction="column" gap={4} py={8}>
-        <Spinner size="xl" colorScheme="blue" />
-        <Text>Please wait...</Text>
-      </Center>
+      <div className="flex flex-col items-center gap-4 py-8">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+        <p className="text-sm text-muted-foreground">Please wait...</p>
+      </div>
     );
   }
 
@@ -36,13 +36,13 @@ export default function UserTodos() {
   console.log("profile", profile.todoCount);
 
   return (
-    <Flex direction="column" gap={8}>
+    <div className="flex flex-col gap-8">
       <WalletMultiButtonDynamic />
-      <Text fontSize="2xl" fontWeight="bold">
+      <h1 className="text-2xl font-bold">
         {profile?.name}
-      </Text>
+      </h1>
       <TodoList profile={profile} />
       <NewTodo profile={profile} />
-    </Flex>
+    </div>
   );
 }

@@ -2,13 +2,12 @@
  * Demonstrates how to create a SPL token and store it's metadata on chain (using the Metaplex MetaData program)
  */
 
-import { Keypair, PublicKey, SystemProgram } from "@solana/web3.js";
-import { MINT_SIZE, TOKEN_PROGRAM_ID, createInitializeMint2Instruction } from "@solana/spl-token";
-
+import { Keypair, SystemProgram } from "@solana/web3.js";
 import {
-  PROGRAM_ID as METADATA_PROGRAM_ID,
-  createCreateMetadataAccountV3Instruction,
-} from "@metaplex-foundation/mpl-token-metadata";
+  MINT_SIZE,
+  TOKEN_2022_PROGRAM_ID,
+  createInitializeMintInstruction,
+} from "@solana/spl-token";
 
 import { payer, testWallet, connection } from "@/lib/vars";
 
@@ -33,11 +32,11 @@ import {
   const tokenConfig = {
     // define how many decimals we want our tokens to have
     decimals: 6,
-    //
+    // the name of the token
     name: "Solana Bootcamp Autumn 2024",
-    //
+    // the symbol of the token
     symbol: "SBS",
-    //
+    // the URI pointing to the token's metadata
     uri: "https://raw.githubusercontent.com/trankhacvy/solana-bootcamp-autumn-2024/main/assets/sbs-token.json",
   };
 
@@ -56,15 +55,16 @@ import {
     // store enough lamports needed for our `space` to be rent exempt
     lamports: await connection.getMinimumBalanceForRentExemption(MINT_SIZE),
     // tokens are owned by the "token program"
-    programId: TOKEN_PROGRAM_ID,
+    programId: TOKEN_2022_PROGRAM_ID,
   });
 
   // Initialize that account as a Mint
-  const initializeMintInstruction = createInitializeMint2Instruction(
+  const initializeMintInstruction = createInitializeMintInstruction(
     mintKeypair.publicKey,
     tokenConfig.decimals,
     payer.publicKey,
     payer.publicKey,
+    TOKEN_2022_PROGRAM_ID,
   );
 
   /**
@@ -95,48 +95,6 @@ import {
   */
 
   /**
-   * Build the instruction to store the token's metadata on chain
-   * - derive the pda for the metadata account
-   * - create the instruction with the actual metadata in it
-   */
-
-  // derive the pda address for the Metadata account
-  const metadataAccount = PublicKey.findProgramAddressSync(
-    [Buffer.from("metadata"), METADATA_PROGRAM_ID.toBuffer(), mintKeypair.publicKey.toBuffer()],
-    METADATA_PROGRAM_ID,
-  )[0];
-
-  console.log("Metadata address:", metadataAccount.toBase58());
-
-  // Create the Metadata account for the Mint
-  const createMetadataInstruction = createCreateMetadataAccountV3Instruction(
-    {
-      metadata: metadataAccount,
-      mint: mintKeypair.publicKey,
-      mintAuthority: payer.publicKey,
-      payer: payer.publicKey,
-      updateAuthority: payer.publicKey,
-    },
-    {
-      createMetadataAccountArgsV3: {
-        data: {
-          creators: null,
-          name: tokenConfig.name,
-          symbol: tokenConfig.symbol,
-          uri: tokenConfig.uri,
-          sellerFeeBasisPoints: 0,
-          collection: null,
-          uses: null,
-        },
-        // `collectionDetails` - for non-nft type tokens, normally set to `null` to not have a value set
-        collectionDetails: null,
-        // should the metadata be updatable?
-        isMutable: true,
-      },
-    },
-  );
-
-  /**
    * Build the transaction to send to the blockchain
    */
 
@@ -144,14 +102,8 @@ import {
     connection,
     payer: payer.publicKey,
     signers: [payer, mintKeypair],
-    instructions: [
-      createMintAccountInstruction,
-      initializeMintInstruction,
-      createMetadataInstruction,
-    ],
+    instructions: [createMintAccountInstruction, initializeMintInstruction],
   });
-
-  printConsoleSeparator();
 
   try {
     // actually send the transaction

@@ -3,10 +3,21 @@
  */
 
 import { PublicKey } from "@solana/web3.js";
-import { getOrCreateAssociatedTokenAccount, mintTo } from "@solana/spl-token";
+import {
+  getAssociatedTokenAddressSync,
+  createAssociatedTokenAccountInstruction,
+  createMintToCheckedInstruction,
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+  TOKEN_2022_PROGRAM_ID,
+} from "@solana/spl-token";
 
 import { payer, connection } from "@/lib/vars";
-import { explorerURL, loadPublicKeysFromFile } from "@/lib/helpers";
+import {
+  buildTransaction,
+  explorerURL,
+  loadPublicKeysFromFile,
+  printConsoleSeparator,
+} from "@/lib/helpers";
 
 (async () => {
   console.log("Payer address:", payer.publicKey.toBase58());
@@ -34,13 +45,38 @@ import { explorerURL, loadPublicKeysFromFile } from "@/lib/helpers";
    * the ata is then owned by the user's wallet
    */
 
-  // get or create the token's ata
-  const tokenAccount = await getOrCreateAssociatedTokenAccount(
-    connection,
-    payer,
+  const associatedTokenAccount = getAssociatedTokenAddressSync(
     tokenMint,
     payer.publicKey,
-  ).then(ata => ata.address);
+    false, // allowOwnerOffCurve
+    TOKEN_2022_PROGRAM_ID,
+    ASSOCIATED_TOKEN_PROGRAM_ID,
+  );
+
+  const createAssociatedTokenAccountIx = createAssociatedTokenAccountInstruction(
+    payer.publicKey,
+    associatedTokenAccount,
+    payer.publicKey, // owner
+    tokenMint, // mint
+    TOKEN_2022_PROGRAM_ID,
+    ASSOCIATED_TOKEN_PROGRAM_ID,
+  );
+
+  const tx = await buildTransaction({
+    connection,
+    payer: payer.publicKey,
+    signers: [payer],
+    instructions: [createAssociatedTokenAccountIx],
+  });
+
+  const sig = await connection.sendTransaction(tx);
+
+  console.log("Transaction completed.");
+  console.log(explorerURL({ txSignature: sig }));
+
+  printConsoleSeparator();
+
+  await new Promise(resolve => setTimeout(resolve, 1000));
 
   /*
     note: when creating an ata, the instruction will allocate space on chain
@@ -53,7 +89,7 @@ import { explorerURL, loadPublicKeysFromFile } from "@/lib/helpers";
   // directly create the ata
   // const tokenAccount = await createAccount(connection, payer, tokenMint, payer.publicKey);
 
-  console.log("Token account address:", tokenAccount.toBase58());
+  console.log("Token account address:", associatedTokenAccount.toBase58());
 
   /**
    * The number of tokens to mint takes into account the `decimal` places set on your `tokenMint`.
@@ -65,18 +101,32 @@ import { explorerURL, loadPublicKeysFromFile } from "@/lib/helpers";
    * - if decimals=6, amount=100_000 => actual tokens minted == 0.10
    */
 
+  // mint some token to the "ata"
+
   const amountOfTokensToMint = 1_000_000; // 1 * 10**6
 
-  // mint some token to the "ata"
-  console.log("Minting some tokens to the ata...");
-  const mintSig = await mintTo(
-    connection,
-    payer,
+  const mintToIx = createMintToCheckedInstruction(
     tokenMint,
-    tokenAccount,
-    payer,
-    amountOfTokensToMint,
+    associatedTokenAccount,
+    payer.publicKey, // mint authority
+    amountOfTokensToMint, // amount
+    6, // decimals
+    [], // multiSigners
+    TOKEN_2022_PROGRAM_ID, // programId
   );
 
+<<<<<<< HEAD
   console.log(explorerURL({ txSignature: mintSig }));
+=======
+  const mintToTx = await buildTransaction({
+    connection,
+    payer: payer.publicKey,
+    signers: [payer],
+    instructions: [mintToIx],
+  });
+
+  const mintToSig = await connection.sendTransaction(mintToTx);
+
+  console.log(explorerURL({ txSignature: mintToSig }));
+>>>>>>> newUpstream/main
 })();

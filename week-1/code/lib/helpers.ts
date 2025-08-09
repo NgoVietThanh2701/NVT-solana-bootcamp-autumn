@@ -3,7 +3,6 @@ import path from "path";
 import {
   Connection,
   Keypair,
-  LAMPORTS_PER_SOL,
   PublicKey,
   TransactionInstruction,
   TransactionMessage,

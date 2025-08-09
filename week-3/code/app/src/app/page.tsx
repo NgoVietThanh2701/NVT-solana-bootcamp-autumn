@@ -1,7 +1,6 @@
 "use client";
 
 import { WalletMultiButtonDynamic } from "@/components/connect-wallet-button";
-import { Box, Center, Container } from "@chakra-ui/react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { ReactNode } from "react";
 import UserTodos from "@/components/user-todos";
@@ -13,17 +12,17 @@ export default function Home() {
 
   if (!publicKey) {
     content = (
-      <Center>
+      <div className="flex justify-center">
         <WalletMultiButtonDynamic />
-      </Center>
+      </div>
     );
   } else {
     content = <UserTodos />;
   }
 
   return (
-    <Box w="full" minH="100vh">
-      <Container py={16}>{content}</Container>
-    </Box>
+    <div className="w-full min-h-screen">
+      <div className="container mx-auto px-4 py-16">{content}</div>
+    </div>
   );
 }
